@@ -13,7 +13,7 @@ authors = [{name = "Emmanuel Asika"}]
 dependencies = ["fastapi==0.115.6", "uvicorn[standard]==0.34.0", "httpx==0.28.1"]
 
 [project.optional-dependencies]
-dev = ["pytest==8.3.4", "ruff==0.9.3"]
+dev = ["pytest==9.1.1", "ruff==0.9.3"]
 
 [project.scripts]
 webhooklab = "app.cli:main"
