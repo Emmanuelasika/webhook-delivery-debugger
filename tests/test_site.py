@@ -32,3 +32,18 @@ def test_pages_site_explains_the_real_workflow_and_example():
     assert "Reproduce the retry" in html
     assert "Webhook Delivery Debugger" in html
     assert "Emmanuel Asika" in html
+
+
+def test_pages_site_has_webhook_specific_states_and_formatted_code():
+    root = Path(__file__).parents[1]
+    html = (root / "docs/index.html").read_text(encoding="utf-8")
+    css = (root / "docs/site.css").read_text(encoding="utf-8")
+    for state in ("Processed", "Duplicate", "Stale / invalid", "ID collision"):
+        assert state in html
+    assert 'class="header"' in html
+    assert 'class="prompt"' in html
+    assert 'class="key"' in html
+    assert 'aria-label="Example HTTP webhook request"' in html
+    assert "overflow:auto" in css
+    for color in ("--green:", "--amber:", "--red:", "--blue:"):
+        assert color in css
