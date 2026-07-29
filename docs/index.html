@@ -2,210 +2,67 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Follow a duplicate webhook investigation from the first support report to an evidence-backed conclusion.">
-  <meta property="og:title" content="Webhook Delivery Debugger — The duplicate delivery case">
-  <meta property="og:description" content="An interactive webhook incident notebook by Emmanuel Asika.">
-  <title>Webhook Delivery Debugger / Incident notebook 07–29</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Reproduce and understand webhook signatures, retries, duplicates, ordering, and event-ID collisions.">
+  <title>Webhook Delivery Debugger</title>
   <link rel="stylesheet" href="site.css">
 </head>
 <body>
-  <header class="casebar">
-    <a class="wordmark" href="#top"><span>WD</span> WEBHOOK DELIVERY DEBUGGER</a>
-    <div class="case-meta"><span>CASE 07–29</span><b>Duplicate fulfillment</b><i>RESOLVED</i></div>
-    <a class="repo" href="https://github.com/Emmanuelasika/webhook-delivery-debugger">SOURCE ↗</a>
-  </header>
-
+  <header class="site-header"><a class="name" href="#top">Webhook Delivery Debugger</a><nav><a href="#use-cases">Use cases</a><a href="#investigation">How it works</a><a href="#failure-lab">Example</a><a href="#start">Get started</a><a href="https://github.com/Emmanuelasika/webhook-delivery-debugger">GitHub ↗</a></nav></header>
   <main id="top">
-    <section class="cover">
-      <div class="margin-note">FIELD NOTE / E. ASIKA<br>LOCAL REPRODUCTION<br>29 JUL 2026</div>
-      <div class="cover-copy">
-        <p class="eyebrow"><span></span> WEBHOOK INCIDENT WORKBENCH</p>
-        <h1>Two deliveries.<br>One event.<br><em>What happened?</em></h1>
-        <p class="lede">A customer says their order was fulfilled twice. The provider shows two successful webhook attempts. Work the case with signed fixtures, a transactional event claim, and a ledger that keeps evidence—not customer payloads.</p>
-        <div class="cover-actions"><a href="#investigation">Open the case file ↓</a><a href="https://github.com/Emmanuelasika/webhook-delivery-debugger#try-the-two-minute-investigation">Run it locally ↗</a></div>
-      </div>
-      <aside class="intake-card">
-        <div class="stamp">SUPPORT INTAKE</div>
-        <dl>
-          <div><dt>Account</dt><dd>Northstar Goods</dd></div>
-          <div><dt>Event</dt><dd><code>payment.succeeded</code></dd></div>
-          <div><dt>Impact</dt><dd>2 orders fulfilled twice</dd></div>
-          <div><dt>Provider view</dt><dd>2 × HTTP 202</dd></div>
-          <div><dt>Question</dt><dd>Retry or duplicate processing?</dd></div>
-        </dl>
-        <p>“We can see two successful deliveries for the same event. Can you confirm whether your endpoint processed both?”</p>
-      </aside>
-    </section>
+    <section class="hero"><p class="eyebrow">Open-source support engineering project</p><h1>Reproduce webhook failures without guessing.</h1><p class="lead">Run a local signed receiver, deliberately create retries and failures, and inspect a safe delivery ledger that never stores payload bodies.</p><div class="actions"><a class="button" href="#start">Run it locally</a><a href="#failure-lab">See a duplicate example</a></div></section>
 
-    <section class="premise">
-      <p class="pullquote">A webhook incident gets easier when <mark>delivery</mark>, <mark>event identity</mark>, and <mark>business side effects</mark> stop being treated as the same thing.</p>
-      <div class="legend">
-        <span><i class="orange"></i> HTTP attempt</span>
-        <span><i class="ink"></i> unique event claim</span>
-        <span><i class="green"></i> evidence retained</span>
-      </div>
-    </section>
+    <section class="intro"><h2>What problem does it solve?</h2><p>A customer says a webhook was delivered twice. The provider says both requests succeeded. The application team cannot tell whether the second request was a normal retry, a duplicate business action, or the same event ID reused with different content.</p><p>This tool gives support and integration engineers a controlled place to reproduce each condition. It verifies signatures before parsing, records delivery metadata and SHA-256 digests, and classifies every attempt without retaining the sensitive body.</p></section>
 
-    <section id="investigation" class="investigation">
-      <div class="section-title">
-        <p>INTERACTIVE CASE STUDY</p>
-        <h2>Work the incident, one fact at a time.</h2>
-        <span>Use the tabs to move from report to reproduction to conclusion.</span>
-      </div>
-      <div class="case-tabs" role="tablist" aria-label="Investigation stages">
-        <button class="active" data-stage="report" role="tab">01 / Report</button>
-        <button data-stage="control" role="tab">02 / Control</button>
-        <button data-stage="retry" role="tab">03 / Retry</button>
-        <button data-stage="inspect" role="tab">04 / Inspect</button>
-        <button data-stage="conclude" role="tab">05 / Conclusion</button>
-      </div>
-      <div class="case-workspace">
-        <article class="stage-copy">
-          <span id="stage-number">STEP 01</span>
-          <h3 id="stage-title">Start with the report, not the theory.</h3>
-          <p id="stage-body">The customer observed a duplicated outcome. The provider observed two HTTP deliveries. Neither fact proves that the receiver ran business work twice.</p>
-          <div class="finding"><b>Question to answer</b><p id="stage-finding">Can the receiver acknowledge a retry without claiming the event twice?</p></div>
-        </article>
-        <div class="terminal" aria-live="polite">
-          <div class="terminal-bar"><span></span><span></span><span></span><b>webhooklab / case-07-29</b></div>
-          <pre id="stage-terminal"><span class="dim">$ # Initial evidence</span>
-provider_attempts = 2
-provider_statuses = [202, 202]
-customer_side_effects = 2
+    <section id="use-cases"><div class="section-heading"><span>Use cases</span><h2>When to use it</h2></div><div class="plain-grid">
+      <article><h3>Duplicate fulfillment</h3><p>Send the same signed event twice and confirm that business work is claimed only once.</p></article>
+      <article><h3>Signature failures</h3><p>Compare a valid fixture with a corrupted signature or timestamp outside the replay window.</p></article>
+      <article><h3>Event-ID collisions</h3><p>Reuse an ID with changed content and prove that the receiver returns a conflict rather than treating it as a normal retry.</p></article>
+      <article><h3>Ordering assumptions</h3><p>Deliver fixtures out of order and test whether downstream code incorrectly assumes arrival order.</p></article>
+    </div></section>
 
-<span class="amber"># Unknown: event claims and effect ordering</span></pre>
-        </div>
-      </div>
-      <div class="progress"><span id="progress-fill"></span></div>
-    </section>
+    <section id="investigation"><div class="section-heading"><span>How it works</span><h2>From signed request to safe evidence</h2></div><ol class="steps">
+      <li><b>Create a fixture.</b><p>The CLI builds a realistic event envelope with an ID, type, creation time, and body.</p></li>
+      <li><b>Sign the exact bytes.</b><p>An HMAC signature and timestamp are attached before the request is sent.</p></li>
+      <li><b>Verify before parsing.</b><p>The receiver rejects invalid or stale requests before JSON parsing or persistence.</p></li>
+      <li><b>Claim the event atomically.</b><p>SQLite distinguishes a first delivery, same-body duplicate, and changed-body ID collision.</p></li>
+      <li><b>Inspect the ledger.</b><p>Outcomes, timestamps, event IDs, and digests remain available; <code>payload_body: not retained</code>.</p></li>
+    </ol></section>
 
-    <section id="failure-lab" class="lab">
-      <div class="section-title">
-        <p>TRY A FAILURE</p>
-        <h2>The receiver is predictable on purpose.</h2>
-        <span>Choose a condition. The panel shows the command, HTTP result, and what reaches the ledger.</span>
-      </div>
-      <div class="lab-grid">
-        <div class="scenario-list">
-          <button class="active" data-scenario="duplicate"><b>Duplicate retry</b><span>Same ID + same digest</span><em>202</em></button>
-          <button data-scenario="bad-signature"><b>Corrupt signature</b><span>Untrusted request</span><em>400</em></button>
-          <button data-scenario="stale"><b>Expired timestamp</b><span>Signed 10 minutes ago</span><em>400</em></button>
-          <button data-scenario="collision"><b>ID collision</b><span>Same ID + changed digest</span><em>409</em></button>
-          <button data-scenario="ordering"><b>Out of order</b><span>Future update arrives first</span><em>202</em></button>
-        </div>
-        <div class="evidence-panel">
-          <div class="evidence-head"><span>REPRODUCTION</span><b id="scenario-name">Duplicate retry</b><i id="scenario-status">EXPECTED</i></div>
-          <pre id="scenario-command">$ webhooklab chaos payment.succeeded --duplicate</pre>
-          <div class="attempts" id="scenario-output">
-            <div><span>ATTEMPT 01</span><code>202</code><b>processed</b><small>event claim created</small></div>
-            <div><span>ATTEMPT 02</span><code>202</code><b class="amber">duplicate</b><small>no second claim</small></div>
-          </div>
-          <div class="retention"><span>LEDGER EFFECT</span><strong id="scenario-ledger">1 unique event · 2 attempt rows · 0 payload bodies</strong></div>
-        </div>
-      </div>
-    </section>
+    <section id="failure-lab"><div class="section-heading"><span>Worked example</span><h2>“The invoice was fulfilled twice”</h2></div><p>First, start the receiver. Then send one payment event twice with the same ID and body.</p><div class="two-columns">
+      <div><h3>Reproduce the retry</h3><pre><code>webhooklab serve --port 8080
 
-    <section id="architecture" class="architecture">
-      <div class="section-title">
-        <p>RECEIVER CUTAWAY</p>
-        <h2>Verification happens before interpretation.</h2>
-      </div>
-      <div class="cutaway">
-        <div class="wire-label raw">raw bytes</div>
-        <article><span>01</span><h3>Authenticate</h3><p>Compute HMAC-SHA256 over <code>timestamp.body</code>. Reject missing, stale, or mismatched signatures.</p><small>Nothing stored on rejection</small></article>
-        <div class="wire"></div>
-        <article><span>02</span><h3>Validate</h3><p>Parse a small envelope only after the request is trusted: UUID, event type, created time, and data.</p><small>Malformed envelope → 422</small></article>
-        <div class="wire"></div>
-        <article class="claim"><span>03</span><h3>Claim atomically</h3><p>Hash the raw body. A <code>BEGIN IMMEDIATE</code> transaction decides new, duplicate, or collision.</p><small>No check-then-insert race</small></article>
-        <div class="wire split"></div>
-        <article><span>04</span><h3>Leave evidence</h3><p>Append attempt metadata and the digest. The event’s <code>data</code> object never reaches disk.</p><small>Useful without becoming a payload archive</small></article>
-      </div>
-      <div class="identity-rule">
-        <div><span>SAME ID</span><b>+</b><span>SAME DIGEST</span><strong>duplicate</strong></div>
-        <div><span>SAME ID</span><b>+</b><span>NEW DIGEST</span><strong class="red">id_collision</strong></div>
-      </div>
-    </section>
+# in another terminal
+webhooklab chaos payment.succeeded \
+  --duplicate</code></pre></div>
+      <div><h3>Expected attempts</h3><pre><code>{"http_status":202,
+ "outcome":"processed"}
 
-    <section id="ledger" class="ledger">
-      <div class="section-title">
-        <p>EVIDENCE VIEW</p>
-        <h2>What I would attach to the escalation.</h2>
-      </div>
-      <div class="ledger-paper">
-        <div class="ledger-header">
-          <div><small>EVENT ID</small><code>6fbc2c2f-c3da-40f8-bdf6-a6b494a3cdf0</code></div>
-          <div><small>TYPE</small><code>payment.succeeded</code></div>
-          <div><small>FIRST SEEN</small><code>09:30:04.118Z</code></div>
-          <div><small>PROCESS COUNT</small><strong>1</strong></div>
-        </div>
-        <div class="digest"><small>ORIGINAL PAYLOAD SHA-256</small><code>52b80dfe3a14b231…0c4f7922</code><i>body discarded</i></div>
-        <div class="ledger-table">
-          <div class="row head"><span>#</span><span>received</span><span>outcome</span><span>HTTP</span><span>duration</span><span>digest match</span></div>
-          <div class="row"><span>01</span><span>09:30:04.118Z</span><b>processed</b><span>202</span><span>4ms</span><span>yes</span></div>
-          <div class="row"><span>02</span><span>09:30:06.407Z</span><b class="amber">duplicate</b><span>202</span><span>2ms</span><span>yes</span></div>
-        </div>
-        <div class="annotation a1">Provider retry confirmed</div>
-        <div class="annotation a2">Only one event claim</div>
-      </div>
-      <div class="conclusion">
-        <span>CASE CONCLUSION</span>
-        <p>The transport delivered the same event twice, which is normal at-least-once behavior. The reference receiver claimed it once. If production fulfilled twice, the next investigation is where production places its side effect relative to its idempotency claim—not whether the provider retried.</p>
-      </div>
-    </section>
+{"http_status":202,
+ "outcome":"duplicate"}</code></pre></div>
+    </div><div class="story"><h3>What this proves</h3><p>The receiver acknowledges both delivery attempts but creates one event claim. If the same ID arrives with a different digest, the result changes to <code>409 id_collision</code>. Support can now tell engineering whether the problem is receiver idempotency, provider retry behaviour, or invalid event reuse.</p></div></section>
 
-    <section class="boundaries">
-      <div class="section-title">
-        <p>HONEST BOUNDARIES</p>
-        <h2>A lab, not a webhook platform.</h2>
-      </div>
-      <div class="boundary-grid">
-        <article><span>IT PROVES</span><ul><li>Raw-body HMAC verification</li><li>Timestamp tolerance</li><li>Atomic event claiming</li><li>Duplicate vs collision evidence</li><li>Digest-only retention</li></ul></article>
-        <article><span>IT DOES NOT CLAIM</span><ul><li>Exactly-once HTTP delivery</li><li>Provider-specific compatibility</li><li>Distributed production storage</li><li>A retry queue or dead-letter service</li><li>Universal event ordering</li></ul></article>
-        <aside><b>Production handoff</b><p>Claim durably, enqueue work, return quickly. Add authenticated operational views, managed storage, metrics, tracing, and a domain-specific ordering policy.</p></aside>
-      </div>
-    </section>
+    <section id="ledger"><div class="section-heading"><span>Evidence</span><h2>What the ledger keeps</h2></div><div class="plain-list"><p><b>Kept:</b> event ID, type, attempt time, outcome, HTTP result, and SHA-256 digest.</p><p><b>Not kept:</b> payload body, signing secret, Authorization values, or customer data.</p></div><pre><code>{
+  "delivery_attempts": 2,
+  "unique_events": 1,
+  "duplicate_rate": 0.5,
+  "outcomes": [
+    {"outcome": "processed", "count": 1},
+    {"outcome": "duplicate", "count": 1}
+  ]
+}</code></pre></section>
 
-    <section class="closing">
-      <p>SUPPORT ENGINEERING IS EVIDENCE ENGINEERING.</p>
-      <h2>Make the failure small enough to understand.</h2>
-      <div><a href="https://github.com/Emmanuelasika/webhook-delivery-debugger">Read the source ↗</a><a href="https://github.com/Emmanuelasika/webhook-delivery-debugger#failure-recipes">Run a failure recipe ↗</a></div>
-      <span>Designed and built by <a href="https://github.com/Emmanuelasika">Emmanuel Asika</a></span>
-    </section>
+    <section id="architecture"><div class="section-heading"><span>Architecture</span><h2>A deliberately small receiver</h2></div><div class="flow"><span>Fixture CLI</span><i>→</i><span>HMAC signature</span><i>→</i><span>FastAPI receiver</span><i>→</i><span>Atomic event claim</span><i>→</i><span>SQLite ledger</span></div><p>The CLI is responsible for fixtures and failure recipes. The receiver owns verification and classification. The store uses one transaction so concurrent deliveries cannot both become the first claim.</p></section>
+
+    <section id="start"><div class="section-heading"><span>Get started</span><h2>Run the debugger</h2></div><pre><code>git clone https://github.com/Emmanuelasika/webhook-delivery-debugger.git
+cd webhook-delivery-debugger
+python -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+webhooklab serve --port 8080</code></pre><p>The installed command remains <code>webhooklab</code> for compatibility. Open <code>http://127.0.0.1:8080</code> for the delivery ledger.</p></section>
+
+    <section class="limits"><h2>What it is not</h2><p>This is a local reliability and reproduction tool, not a hosted webhook gateway. It does not queue production deliveries, retry customer traffic, or replace provider logs. Production use would need authentication, multi-tenancy, encrypted secrets, retention policy, rate controls, and durable backups.</p></section>
   </main>
-
-  <script>
-    const stages = {
-      report: ["STEP 01", "Start with the report, not the theory.", "The customer observed a duplicated outcome. The provider observed two HTTP deliveries. Neither fact proves that the receiver ran business work twice.", "Can the receiver acknowledge a retry without claiming the event twice?", `<span class="dim">$ # Initial evidence</span>\nprovider_attempts = 2\nprovider_statuses = [202, 202]\ncustomer_side_effects = 2\n\n<span class="amber"># Unknown: event claims and effect ordering</span>`],
-      control: ["STEP 02", "Prove the happy path first.", "A correctly signed fixture isolates basic compatibility. If this fails, duplicate behavior is not yet the interesting problem.", "Does the same envelope and signing scheme produce one accepted event claim?", `<span class="dim">$ webhooklab send payment.succeeded</span>\n{"http_status": 202,\n "outcome": <span class="green">"processed"</span>,\n "event_id": "6fbc…cdf0"}\n\n<span class="green">✓ signature and envelope accepted</span>`],
-      retry: ["STEP 03", "Replay the exact bytes.", "The chaos command generates one event and sends that same body twice. This models a provider retry after an ambiguous response.", "Does the second delivery become a second claim—or a classified duplicate?", `<span class="dim">$ webhooklab chaos payment.succeeded --duplicate</span>\nattempt 01  HTTP 202  <span class="green">processed</span>\nattempt 02  HTTP 202  <span class="amber">duplicate</span>\n\nunique_events=1  delivery_attempts=2`],
-      inspect: ["STEP 04", "Inspect the identity, not the payload.", "The ledger links both attempts through one event ID and matching SHA-256 digest. It keeps the evidence needed for escalation without retaining customer data.", "Can I distinguish retry behavior from an ID reused with changed content?", `<span class="dim">$ webhooklab inspect 6fbc…cdf0</span>\nprocess_count: 1\nattempts:\n  - outcome: processed\n  - outcome: duplicate\npayload_sha256: 52b80dfe…7922\n<span class="green">payload_body: not retained</span>`],
-      conclude: ["STEP 05", "Move the investigation downstream.", "Webhook delivery is at least once. The reproduction shows a sound receiver can acknowledge both attempts while claiming the event once.", "Where does production perform its business side effect relative to its atomic claim?", `<span class="green">CONCLUSION</span>\nprovider retry: confirmed\nsecond event claim: prevented\npayload collision: no\n\n<span class="amber">NEXT → inspect production side-effect ordering</span>`]
-    };
-    const stageButtons = [...document.querySelectorAll("[data-stage]")];
-    stageButtons.forEach((button, index) => button.addEventListener("click", () => {
-      stageButtons.forEach(item => item.classList.remove("active")); button.classList.add("active");
-      const value = stages[button.dataset.stage];
-      ["stage-number", "stage-title", "stage-body", "stage-finding"].forEach((id, i) => document.getElementById(id).textContent = value[i]);
-      document.getElementById("stage-terminal").innerHTML = value[4];
-      document.getElementById("progress-fill").style.width = `${(index + 1) * 20}%`;
-    }));
-    const scenarios = {
-      duplicate: ["Duplicate retry", "EXPECTED", "$ webhooklab chaos payment.succeeded --duplicate", `<div><span>ATTEMPT 01</span><code>202</code><b>processed</b><small>event claim created</small></div><div><span>ATTEMPT 02</span><code>202</code><b class="amber">duplicate</b><small>no second claim</small></div>`, "1 unique event · 2 attempt rows · 0 payload bodies"],
-      "bad-signature": ["Corrupt signature", "REJECTED", "$ webhooklab chaos customer.updated --invalid-signature", `<div><span>AUTH GATE</span><code>400</code><b class="red">rejected</b><small>constant-time mismatch</small></div>`, "No event or attempt row written"],
-      stale: ["Expired timestamp", "REJECTED", "$ webhooklab chaos invoice.created --stale", `<div><span>AUTH GATE</span><code>400</code><b class="red">stale</b><small>600s age > 300s tolerance</small></div>`, "No event or attempt row written"],
-      collision: ["ID collision", "ESCALATE", "$ # same event ID, changed amount", `<div><span>ATTEMPT 01</span><code>202</code><b>processed</b><small>digest 52b8…</small></div><div><span>ATTEMPT 02</span><code>409</code><b class="red">id_collision</b><small>digest a41c…</small></div>`, "1 unique event · 2 attempt rows · collision preserved"],
-      ordering: ["Out of order", "OBSERVED", "$ webhooklab chaos subscription.updated --out-of-order", `<div><span>ATTEMPT 01</span><code>202</code><b>customer.updated</b><small>created at T+10s</small></div><div><span>ATTEMPT 02</span><code>202</code><b>subscription.updated</b><small>created at T</small></div>`, "2 unique events · arrival order recorded, not corrected"]
-    };
-    document.querySelectorAll("[data-scenario]").forEach(button => button.addEventListener("click", () => {
-      document.querySelectorAll("[data-scenario]").forEach(item => item.classList.remove("active")); button.classList.add("active");
-      const value = scenarios[button.dataset.scenario];
-      document.getElementById("scenario-name").textContent = value[0];
-      document.getElementById("scenario-status").textContent = value[1];
-      document.getElementById("scenario-command").textContent = value[2];
-      document.getElementById("scenario-output").innerHTML = value[3];
-      document.getElementById("scenario-ledger").textContent = value[4];
-    }));
-  </script>
+  <footer><span>Built by Emmanuel Asika</span><a href="https://github.com/Emmanuelasika/webhook-delivery-debugger">View source on GitHub ↗</a></footer>
 </body>
 </html>
