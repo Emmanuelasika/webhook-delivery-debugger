@@ -3,158 +3,300 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Reproduce webhook signatures, retries, duplicates, stale requests, and event-ID collisions in a safe local receiver.">
-  <title>Webhook Delivery Debugger</title>
+  <meta name="description" content="A local webhook receiver for proving signature failures, retries, duplicate deliveries, and event-ID collisions without retaining payloads.">
+  <meta name="theme-color" content="#f4f2ed">
+  <meta property="og:title" content="Webhook Delivery Debugger — Every attempt, accounted for.">
+  <meta property="og:description" content="Reproduce a webhook incident. Follow the signature gate, atomic claim, and evidence ledger.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://emmanuelasika.github.io/webhook-delivery-debugger/assets/webhook-observatory.webp">
+  <meta property="og:image:width" content="1672">
+  <meta property="og:image:height" content="941">
+  <meta name="twitter:card" content="summary_large_image">
+  <title>Webhook Delivery Debugger — Every attempt, accounted for</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="site.css">
 </head>
 <body>
-  <header class="site-header">
-    <a class="name" href="#top"><span class="mark" aria-hidden="true">W</span> Webhook Delivery Debugger</a>
-    <nav aria-label="Primary navigation">
-      <a href="#ledger">Delivery ledger</a>
-      <a href="#pipeline">Receiver pipeline</a>
-      <a href="#case">Investigation</a>
-      <a href="#start">Quickstart</a>
-      <a href="https://github.com/Emmanuelasika/webhook-delivery-debugger">GitHub ↗</a>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header class="masthead">
+    <a class="identity" href="#top" aria-label="Webhook Delivery Debugger, home">
+      <span class="identity-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span>Webhook Delivery Debugger</span>
+    </a>
+    <nav aria-label="Primary">
+      <a href="#stream">Live stream</a>
+      <a href="#trace">Trace a case</a>
+      <a href="#architecture">How it works</a>
+      <a href="#quickstart">Run locally</a>
     </nav>
+    <a class="github-link" href="https://github.com/Emmanuelasika/webhook-delivery-debugger">View source <span aria-hidden="true">↗</span></a>
   </header>
 
-  <main id="top">
-    <section class="hero">
-      <div>
-        <p class="kicker"><span class="live-dot"></span> Local receiver · evidence, not payloads</p>
-        <h1>See what happened to every webhook attempt.</h1>
-        <p class="lead">Send signed fixtures through a real receiver. The ledger shows whether each request was processed, repeated, rejected, or reused with different content—without keeping the body.</p>
-        <div class="actions"><a class="button" href="#start">Start the receiver</a><a class="text-link" href="#case">Follow an investigation →</a></div>
-      </div>
-      <aside class="receiver-status" aria-label="Receiver status">
-        <div class="status-head"><span>receiver / local</span><span class="online">● listening</span></div>
-        <dl>
-          <div><dt>Endpoint</dt><dd>POST /webhooks</dd></div>
+  <main id="content">
+    <section class="hero" id="top">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="pulse" aria-hidden="true"></span> Receiver online · localhost:8080</p>
+        <h1>Every attempt,<br><em>accounted for.</em></h1>
+        <p class="hero-lede">A forensic workbench for the awkward space between “we sent it” and “you processed it twice.” Reproduce signed deliveries, watch each gate decide, and leave with evidence safe enough to share.</p>
+        <div class="hero-actions">
+          <a class="primary-action" href="#stream">Open the delivery stream <span>↓</span></a>
+          <a class="quiet-action" href="#quickstart">Install in two minutes</a>
+        </div>
+        <dl class="hero-facts">
+          <div><dt>Signature</dt><dd>HMAC-SHA256</dd></div>
           <div><dt>Replay window</dt><dd>300 seconds</dd></div>
-          <div><dt>Payload storage</dt><dd>disabled</dd></div>
+          <div><dt>Payload retention</dt><dd>None</dd></div>
         </dl>
-      </aside>
+      </div>
+      <figure class="hero-art">
+        <img src="assets/webhook-observatory.webp" width="1672" height="941" alt="Technical illustration of webhook events passing through a signature gate into processed, retry, and collision paths">
+        <figcaption>
+          <span>Delivery observatory</span>
+          <span><i class="dot blue"></i> verify</span>
+          <span><i class="dot green"></i> process</span>
+          <span><i class="dot amber"></i> retry</span>
+          <span><i class="dot red"></i> isolate</span>
+        </figcaption>
+      </figure>
     </section>
 
-    <section id="ledger" class="ledger-section">
-      <div class="section-copy">
-        <p class="label">Delivery ledger</p>
-        <h2>One row for every attempt</h2>
-        <p>A customer reports two fulfilments. Start here: compare the event ID, digest, signature result, and final receiver decision.</p>
-      </div>
-      <div class="ledger" role="region" aria-label="Example webhook delivery ledger" tabindex="0">
-        <table>
-          <thead><tr><th>Attempt</th><th>Event ID</th><th>Age</th><th>Digest</th><th>HTTP</th><th>Decision</th></tr></thead>
-          <tbody>
-            <tr><td><span class="attempt">09:41:02</span></td><td><code>evt_pay_81</code></td><td>2s</td><td><code>8f21…d903</code></td><td>202</td><td><span class="state processed">Processed</span></td></tr>
-            <tr><td><span class="attempt">09:41:08</span></td><td><code>evt_pay_81</code></td><td>8s</td><td><code>8f21…d903</code></td><td>202</td><td><span class="state duplicate">Duplicate</span></td></tr>
-            <tr><td><span class="attempt">09:44:31</span></td><td><code>evt_pay_82</code></td><td>7m</td><td><code>31ca…22b0</code></td><td>401</td><td><span class="state rejected">Stale / invalid</span></td></tr>
-            <tr><td><span class="attempt">09:46:15</span></td><td><code>evt_pay_81</code></td><td>1s</td><td><code>9a72…ce40</code></td><td>409</td><td><span class="state collision">ID collision</span></td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="legend" aria-label="Decision meanings">
-        <p><span class="swatch green"></span><b>Processed</b> First valid claim; business work may begin.</p>
-        <p><span class="swatch amber"></span><b>Duplicate</b> Same event ID and body; acknowledge, do not work twice.</p>
-        <p><span class="swatch red"></span><b>Stale / invalid</b> Verification failed before parsing or storage.</p>
-        <p><span class="swatch blue"></span><b>Collision</b> Known ID, different digest; return a conflict for investigation.</p>
-      </div>
-    </section>
-
-    <section id="investigation">
-      <span id="pipeline" class="anchor-target" aria-hidden="true"></span>
-      <div class="section-copy">
-        <p class="label">Receiver pipeline</p>
-        <h2>The order is the safety model</h2>
-        <p>The receiver does not parse first and decide later. Each gate rules out a different failure mode.</p>
-      </div>
-      <ol class="pipeline">
-        <li><span class="step-no">01</span><div><b>Read exact bytes</b><p>Preserve the request body exactly as signed.</p></div></li>
-        <li><span class="step-no">02</span><div><b>Verify signature + age</b><p>Reject a bad HMAC or timestamp outside the replay window.</p></div></li>
-        <li><span class="step-no">03</span><div><b>Hash, then parse</b><p>Create a SHA-256 digest before reading the event envelope.</p></div></li>
-        <li><span class="step-no">04</span><div><b>Claim atomically</b><p>SQLite decides first delivery, duplicate, or ID collision.</p></div></li>
-        <li><span class="step-no">05</span><div><b>Record the outcome</b><p>Keep evidence metadata; <code>payload_body: not retained</code>.</p></div></li>
-      </ol>
-      <div class="http-example code-window">
-        <div class="code-title"><span>HTTP request</span><span>valid signed delivery</span></div>
-        <pre aria-label="Example HTTP webhook request"><code><span class="method">POST</span> <span class="url">/webhooks</span> <span class="dim">HTTP/1.1</span>
-<span class="header">Host:</span> 127.0.0.1:8080
-<span class="header">Content-Type:</span> application/json
-<span class="header">Webhook-Id:</span> evt_pay_81
-<span class="header">Webhook-Timestamp:</span> 1785318062
-<span class="header">Webhook-Signature:</span> <span class="string">v1,9cde45…</span>
-
-{<span class="key">"id"</span>: <span class="string">"evt_pay_81"</span>, <span class="key">"type"</span>: <span class="string">"payment.succeeded"</span>, <span class="key">"amount"</span>: <span class="number">4900</span>}</code></pre>
-      </div>
-    </section>
-
-    <section id="failure-lab">
-      <span id="case" class="anchor-target" aria-hidden="true"></span>
-      <div class="case-intro">
-        <p class="label">Case file · duplicate fulfilment</p>
-        <h2>“We received the same payment twice.”</h2>
-        <p>The provider saw two successful responses. The application team saw two deliveries. Neither fact proves that two business actions should have happened.</p>
-      </div>
-      <div class="case-grid">
-        <div class="case-notes">
-          <div><span>1</span><p><b>Reproduce.</b> Send one signed payment fixture, then instruct the CLI to repeat it.</p></div>
-          <div><span>2</span><p><b>Compare.</b> Both rows have <code>evt_pay_81</code> and digest <code>8f21…d903</code>.</p></div>
-          <div><span>3</span><p><b>Conclude.</b> This was a normal retry. The receiver claimed it once and acknowledged both attempts.</p></div>
+    <section class="stream-section" id="stream">
+      <header class="section-heading split-heading">
+        <div>
+          <p class="index-label">01 — Observe</p>
+          <h2>A live delivery stream.<br>Not a pile of request bodies.</h2>
         </div>
-        <div class="code-window">
-          <div class="code-title"><span>Terminal</span><span>Reproduce the retry</span></div>
-          <pre><code><span class="prompt">$</span> webhooklab chaos payment.succeeded \
-    --event-id evt_pay_81 --duplicate
+        <p>Every accepted attempt leaves a compact evidence trail: identity, age, digest, decision, and timing. Select a row to inspect what the receiver knew.</p>
+      </header>
 
-<span class="dim">→ attempt 1</span>  <span class="ok">202 processed</span>
-<span class="dim">→ attempt 2</span>  <span class="warn">202 duplicate</span>
-<span class="dim">→ claims</span>     <span class="number">1</span>
-
-<span class="prompt">$</span> webhooklab ledger --event evt_pay_81
-<span class="key">digest</span>        8f21…d903
-<span class="key">payload_body</span>  <span class="dim">not retained</span></code></pre>
+      <div class="observatory">
+        <div class="stream-toolbar">
+          <div class="stream-title"><span class="pulse"></span><b>Receiving events</b><small>4 attempts · 3 outcomes</small></div>
+          <div class="filters" role="group" aria-label="Filter delivery outcomes">
+            <button class="filter active" type="button" data-filter="all">All <span>4</span></button>
+            <button class="filter" type="button" data-filter="processed">Processed <span>1</span></button>
+            <button class="filter" type="button" data-filter="duplicate">Retries <span>1</span></button>
+            <button class="filter" type="button" data-filter="exception">Exceptions <span>2</span></button>
+          </div>
+        </div>
+        <div class="stream-shell">
+          <div class="event-list" role="listbox" aria-label="Webhook delivery attempts">
+            <button class="event-row selected" type="button" role="option" aria-selected="true" data-outcome="processed" data-detail="processed">
+              <span class="timeline-node processed-node"></span>
+              <span class="event-main"><b>payment.succeeded</b><code>evt_pay_81</code></span>
+              <span class="event-time">09:41:02.118</span>
+              <span class="event-age">age 2s</span>
+              <span class="event-state state-processed">Processed</span>
+            </button>
+            <button class="event-row" type="button" role="option" aria-selected="false" data-outcome="duplicate" data-detail="duplicate">
+              <span class="timeline-node duplicate-node"></span>
+              <span class="event-main"><b>payment.succeeded</b><code>evt_pay_81</code></span>
+              <span class="event-time">09:41:08.442</span>
+              <span class="event-age">age 8s</span>
+              <span class="event-state state-duplicate">Safe retry</span>
+            </button>
+            <button class="event-row" type="button" role="option" aria-selected="false" data-outcome="exception" data-detail="stale">
+              <span class="timeline-node rejected-node"></span>
+              <span class="event-main"><b>invoice.created</b><code>evt_inv_34</code></span>
+              <span class="event-time">09:44:31.090</span>
+              <span class="event-age">age 7m</span>
+              <span class="event-state state-rejected">Rejected</span>
+            </button>
+            <button class="event-row" type="button" role="option" aria-selected="false" data-outcome="exception" data-detail="collision">
+              <span class="timeline-node collision-node"></span>
+              <span class="event-main"><b>payment.succeeded</b><code>evt_pay_81</code></span>
+              <span class="event-time">09:46:15.771</span>
+              <span class="event-age">age 1s</span>
+              <span class="event-state state-collision">ID collision</span>
+            </button>
+          </div>
+          <aside class="event-inspector" aria-live="polite">
+            <div class="inspector-top">
+              <p>Selected attempt</p>
+              <span id="inspectStatus" class="state-processed">Processed</span>
+            </div>
+            <h3 id="inspectType">payment.succeeded</h3>
+            <p id="inspectSummary">Signature verified. This event ID had not been claimed, so the receiver recorded the first digest and allowed work to begin.</p>
+            <dl class="evidence-list">
+              <div><dt>Event ID</dt><dd id="inspectId">evt_pay_81</dd></div>
+              <div><dt>Body digest</dt><dd id="inspectDigest">8f21d903…6a04</dd></div>
+              <div><dt>HTTP result</dt><dd id="inspectHttp">202 Accepted</dd></div>
+              <div><dt>Decision time</dt><dd id="inspectDuration">4.2 ms</dd></div>
+              <div><dt>Payload body</dt><dd class="safe-value">not retained</dd></div>
+            </dl>
+            <p class="inspector-note" id="inspectNote"><span>Next</span> Queue business work only after the atomic event claim.</p>
+          </aside>
         </div>
       </div>
-      <aside class="finding"><b>Finding</b><p>If fulfilment still ran twice, investigate the application’s idempotency boundary. The delivery evidence does not support two distinct provider events.</p></aside>
     </section>
 
-    <section id="start">
-      <div class="section-copy">
-        <p class="label">Quickstart</p>
-        <h2>Run a receiver in a few commands</h2>
-        <p>Use the installed <code>webhooklab</code> command to start the local ledger, then send fixtures from a second terminal.</p>
+    <section class="trace-section" id="trace">
+      <header class="section-heading">
+        <p class="index-label">02 — Trace</p>
+        <h2>One support case,<br>from allegation to answer.</h2>
+        <p class="wide-copy">A merchant says the same payment created two fulfilments. The provider dashboard shows two successful deliveries. Neither observation proves two unique events existed.</p>
+      </header>
+
+      <div class="case-header">
+        <div><span>Case #WH-1048</span><strong>Duplicate fulfilment after provider timeout</strong></div>
+        <span class="case-status">Evidence complete</span>
       </div>
-      <div class="code-window install">
-        <div class="code-title"><span>Terminal</span><span>install + listen</span></div>
-        <pre><code><span class="prompt">$</span> git clone https://github.com/Emmanuelasika/webhook-delivery-debugger.git
-<span class="prompt">$</span> cd webhook-delivery-debugger
-<span class="prompt">$</span> python -m venv .venv
-<span class="prompt">$</span> source .venv/bin/activate
-<span class="prompt">$</span> pip install -e <span class="string">".[dev]"</span>
+      <div class="case-layout">
+        <div class="case-rail" role="tablist" aria-label="Investigation stages">
+          <button class="case-step active" type="button" role="tab" aria-selected="true" data-stage="report"><span>01</span><b>Report</b><small>What was claimed</small></button>
+          <button class="case-step" type="button" role="tab" aria-selected="false" data-stage="reproduce"><span>02</span><b>Reproduce</b><small>Create the retry</small></button>
+          <button class="case-step" type="button" role="tab" aria-selected="false" data-stage="compare"><span>03</span><b>Compare</b><small>Identity + digest</small></button>
+          <button class="case-step" type="button" role="tab" aria-selected="false" data-stage="conclude"><span>04</span><b>Conclude</b><small>Define ownership</small></button>
+        </div>
+        <div class="case-stage" id="caseStage" aria-live="polite">
+          <p class="stage-kicker">01 / Incoming report</p>
+          <blockquote>“The webhook fired twice, so our order was fulfilled twice.”</blockquote>
+          <p>That sentence joins a delivery fact to a business outcome without proving the idempotency boundary between them. First, recreate the sender’s retry under controlled conditions.</p>
+          <div class="signal-grid">
+            <div><span>Provider attempts</span><strong>2</strong></div>
+            <div><span>Provider responses</span><strong>202 / 202</strong></div>
+            <div><span>Unique event IDs</span><strong>Unknown</strong></div>
+          </div>
+        </div>
+      </div>
+      <figure class="evidence-figure">
+        <img src="assets/delivery-evidence.webp" width="1536" height="1024" loading="lazy" alt="Forensic delivery evidence model showing two matching webhook attempts converging on one claim while a conflicting identity is isolated">
+        <figcaption><span>Evidence model · WH-1048</span><p>Two matching delivery fingerprints converge on one atomic claim. The red specimen shows the materially different case: a reused identity with changed content.</p></figcaption>
+      </figure>
+      <div class="case-resolution">
+        <span class="resolution-mark">✓</span>
+        <div><p>Resolution</p><strong>The provider sent one event twice. The receiver claimed it once.</strong></div>
+        <p>If fulfilment ran twice, the fault is beyond delivery: production likely performs the side effect before, or outside, its idempotency claim.</p>
+      </div>
+    </section>
+
+    <section class="architecture-section" id="architecture">
+      <header class="section-heading split-heading">
+        <div><p class="index-label">03 — Decide</p><h2>Five gates.<br>One safe order.</h2></div>
+        <p>Verification is not middleware decoration. The order determines whether untrusted bytes can reach parsing, storage, or business work.</p>
+      </header>
+      <div class="gate-map" aria-label="Webhook receiver decision pipeline">
+        <article class="gate gate-input"><span>Input</span><b>Exact raw bytes</b><code>POST /api/webhooks</code></article>
+        <div class="connector"><i></i><span>body</span></div>
+        <article class="gate gate-verify"><span>Gate 01</span><b>Verify HMAC + age</b><code>timestamp.body</code></article>
+        <div class="connector"><i></i><span>trusted</span></div>
+        <article class="gate gate-hash"><span>Gate 02</span><b>Hash, then parse</b><code>sha256(raw_body)</code></article>
+        <div class="connector"><i></i><span>digest</span></div>
+        <article class="gate gate-claim"><span>Gate 03</span><b>Claim atomically</b><code>BEGIN IMMEDIATE</code></article>
+        <div class="connector branch"><i></i><span>classify</span></div>
+        <article class="gate gate-result"><span>Outcome</span><b>Work or isolate</b><code>202 · 202 · 409</code></article>
+      </div>
+      <div class="outcome-cards">
+        <article><span class="outcome-icon processed-icon">01</span><div><p>Unseen ID</p><h3>Processed</h3><code>202 · claim created</code></div></article>
+        <article><span class="outcome-icon duplicate-icon">02</span><div><p>Same ID + digest</p><h3>Safe retry</h3><code>202 · no second claim</code></div></article>
+        <article><span class="outcome-icon collision-icon">03</span><div><p>Same ID + new digest</p><h3>ID collision</h3><code>409 · investigate sender</code></div></article>
+      </div>
+    </section>
+
+    <section class="code-story" id="quickstart">
+      <header class="section-heading split-heading">
+        <div><p class="index-label">04 — Reproduce</p><h2>Run the incident<br>on your machine.</h2></div>
+        <p>The CLI signs provider-neutral fixtures and posts them through the real receiver. Try a known-good delivery, then introduce one failure at a time.</p>
+      </header>
+      <div class="terminal-card">
+        <div class="terminal-bar">
+          <div><i></i><i></i><i></i></div>
+          <span>webhooklab — ~/investigations/WH-1048</span>
+          <button class="copy-button" type="button" data-copy aria-label="Copy quickstart commands">Copy</button>
+        </div>
+        <pre><code id="quickstartCode"><span class="comment"># Install and start the evidence receiver</span>
+<span class="prompt">$</span> git clone https://github.com/Emmanuelasika/webhook-delivery-debugger.git
+<span class="prompt">$</span> cd webhook-delivery-debugger && python -m venv .venv
+<span class="prompt">$</span> source .venv/bin/activate && pip install -e <span class="string">".[dev]"</span>
 <span class="prompt">$</span> webhooklab serve --port <span class="number">8080</span>
+<span class="success">✓ receiver listening · signature gate active · payload retention disabled</span>
 
-<span class="ok">✓ receiver listening at http://127.0.0.1:8080</span></code></pre>
+<span class="comment"># In terminal 2, send one event twice</span>
+<span class="prompt">$</span> webhooklab chaos payment.succeeded \
+    --event-id evt_pay_81 --duplicate
+<span class="muted">→ attempt 1</span>  <span class="success">202 processed</span>  <span class="muted">digest 8f21…d903</span>
+<span class="muted">→ attempt 2</span>  <span class="warning">202 duplicate</span>  <span class="muted">digest 8f21…d903</span>
+<span class="muted">→ claims</span>     <span class="number">1</span></code></pre>
       </div>
-      <div class="json-example code-window">
-        <div class="code-title"><span>JSON response</span><span>ledger summary</span></div>
-        <pre><code>{
-  <span class="key">"delivery_attempts"</span>: <span class="number">2</span>,
-  <span class="key">"unique_events"</span>: <span class="number">1</span>,
-  <span class="key">"outcomes"</span>: [
-    {<span class="key">"decision"</span>: <span class="string">"processed"</span>, <span class="key">"count"</span>: <span class="number">1</span>},
-    {<span class="key">"decision"</span>: <span class="string">"duplicate"</span>, <span class="key">"count"</span>: <span class="number">1</span>}
-  ],
-  <span class="key">"payload_storage"</span>: <span class="bool">false</span>
-}</code></pre>
+      <div class="recipes">
+        <article><span>Bad signature</span><code>webhooklab chaos invoice.created<br>--invalid-signature</code><p>Rejected before parsing. No accepted attempt is stored.</p></article>
+        <article><span>Expired request</span><code>webhooklab chaos invoice.created<br>--stale</code><p>Proves the signed timestamp falls outside the 300s replay window.</p></article>
+        <article><span>Known ID probe</span><code>webhooklab replay<br>evt_pay_81</code><p>A changed body under a claimed ID returns a deliberate conflict.</p></article>
       </div>
     </section>
 
-    <section id="architecture" class="limits">
-      <div><p class="label">Scope</p><h2>A debugging receiver, not a gateway</h2></div>
-      <p>Use it locally for retry, ordering, signature, and collision investigations. It does not queue production traffic, manage provider retries, or replace provider logs. A hosted deployment would still need authentication, tenant isolation, encrypted secrets, rate controls, retention policy, and durable backups.</p>
+    <section class="proof-section">
+      <p class="index-label">05 — Share</p>
+      <div class="proof-grid">
+        <h2>The evidence you need.<br><em>Not the customer data you don’t.</em></h2>
+        <div>
+          <p>The ledger retains event metadata, timing, classification, and SHA-256 digests. It intentionally does not retain payload bodies. You can attach the result to an escalation without copying an invoice, email address, or card-adjacent field into another system.</p>
+          <ul>
+            <li><span>Kept</span> event ID, type, received time, digest, outcome, duration</li>
+            <li><span>Not kept</span> request body, event data, customer fields</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="scope-section">
+      <div><p class="index-label">Honest scope</p><h2>A debugging receiver.<br>Not a production gateway.</h2></div>
+      <p>Use it for integration development, support reproduction, and incident learning. It does not queue production traffic or replace provider logs. A shared deployment still needs authentication, tenant isolation, encrypted secrets, rate controls, a retention policy, and durable backups.</p>
+      <a href="https://github.com/Emmanuelasika/webhook-delivery-debugger#what-this-lab-provesand-what-it-does-not">Read the operating boundaries <span>→</span></a>
     </section>
   </main>
-  <footer><span>Built by Emmanuel Asika</span><a href="https://github.com/Emmanuelasika/webhook-delivery-debugger">Source and full documentation ↗</a></footer>
+
+  <footer>
+    <div><span class="identity-mark small" aria-hidden="true"><i></i><i></i><i></i></span><strong>Webhook Delivery Debugger</strong></div>
+    <p>Designed and built by Emmanuel Asika.<br>Open source under the MIT license.</p>
+    <div class="footer-links"><a href="https://github.com/Emmanuelasika/webhook-delivery-debugger">GitHub ↗</a><a href="https://github.com/Emmanuelasika/webhook-delivery-debugger/blob/main/docs/architecture.md">Architecture ↗</a><a href="#top">Back to top ↑</a></div>
+  </footer>
+
+  <script>
+    const details = {
+      processed: {status:"Processed", state:"state-processed", type:"payment.succeeded", id:"evt_pay_81", digest:"8f21d903…6a04", http:"202 Accepted", duration:"4.2 ms", summary:"Signature verified. This event ID had not been claimed, so the receiver recorded the first digest and allowed work to begin.", note:"Queue business work only after the atomic event claim."},
+      duplicate: {status:"Safe retry", state:"state-duplicate", type:"payment.succeeded", id:"evt_pay_81", digest:"8f21d903…6a04", http:"202 Accepted", duration:"2.8 ms", summary:"The ID and body digest match the original attempt. The retry was acknowledged, but it did not create another event claim.", note:"No action required. The transport retried; the receiver stayed idempotent."},
+      stale: {status:"Rejected", state:"state-rejected", type:"invoice.created", id:"evt_inv_34", digest:"not calculated", http:"400 Bad Request", duration:"0.7 ms", summary:"The signed timestamp was older than the 300-second replay window. Rejection happened before event parsing or ledger storage.", note:"Check clock drift or a delayed sender queue. Do not widen tolerance casually."},
+      collision: {status:"ID collision", state:"state-collision", type:"payment.succeeded", id:"evt_pay_81", digest:"9a72ce40…109c", http:"409 Conflict", duration:"3.1 ms", summary:"This ID was already claimed with digest 8f21d903…6a04. Different content under the same identity is isolated, not treated as a retry.", note:"Escalate to the sender with both digests. Do not process either version again."}
+    };
+    const inspectorFields = {
+      inspectStatus: "status", inspectType: "type", inspectSummary: "summary", inspectId: "id",
+      inspectDigest: "digest", inspectHttp: "http", inspectDuration: "duration"
+    };
+    document.querySelectorAll(".event-row").forEach(row => row.addEventListener("click", () => {
+      document.querySelectorAll(".event-row").forEach(item => { item.classList.remove("selected"); item.setAttribute("aria-selected", "false"); });
+      row.classList.add("selected"); row.setAttribute("aria-selected", "true");
+      const detail = details[row.dataset.detail];
+      Object.entries(inspectorFields).forEach(([element, key]) => document.getElementById(element).textContent = detail[key]);
+      const status = document.getElementById("inspectStatus");
+      status.className = detail.state;
+      document.getElementById("inspectNote").innerHTML = `<span>Next</span> ${detail.note}`;
+    }));
+    document.querySelectorAll(".filter").forEach(button => button.addEventListener("click", () => {
+      document.querySelectorAll(".filter").forEach(item => item.classList.remove("active"));
+      button.classList.add("active");
+      document.querySelectorAll(".event-row").forEach(row => {
+        row.hidden = button.dataset.filter !== "all" && row.dataset.outcome !== button.dataset.filter;
+      });
+    }));
+    const stages = {
+      report: [`01 / Incoming report`, `“The webhook fired twice, so our order was fulfilled twice.”`, `That sentence joins a delivery fact to a business outcome without proving the idempotency boundary between them. First, recreate the sender’s retry under controlled conditions.`, ["Provider attempts","2","Provider responses","202 / 202","Unique event IDs","Unknown"]],
+      reproduce: [`02 / Controlled reproduction`, `Send the exact same signed fixture twice.`, `The chaos command holds the event ID and raw body constant. The first attempt is processed; the second is classified as a safe retry.`, ["Attempt 1","Processed","Attempt 2","Duplicate","Atomic claims","1"]],
+      compare: [`03 / Evidence comparison`, `Same identity. Same body. Two transport attempts.`, `Both attempts use evt_pay_81 and digest 8f21…d903. This is not an ID collision and it is not two provider events.`, ["Event IDs","Match","Body digests","Match","Business claims","1"]],
+      conclude: [`04 / Ownership`, `Delivery behaved correctly. Investigate the side-effect boundary.`, `The receiver acknowledged both transport attempts while claiming the event once. If fulfilment ran twice, production work was not coupled to an atomic idempotency claim.`, ["Delivery defect","No","Receiver defect","No","Next owner","Application"]]
+    };
+    document.querySelectorAll(".case-step").forEach(button => button.addEventListener("click", () => {
+      document.querySelectorAll(".case-step").forEach(item => { item.classList.remove("active"); item.setAttribute("aria-selected", "false"); });
+      button.classList.add("active"); button.setAttribute("aria-selected", "true");
+      const stage = stages[button.dataset.stage];
+      document.getElementById("caseStage").innerHTML = `<p class="stage-kicker">${stage[0]}</p><blockquote>${stage[1]}</blockquote><p>${stage[2]}</p><div class="signal-grid"><div><span>${stage[3][0]}</span><strong>${stage[3][1]}</strong></div><div><span>${stage[3][2]}</span><strong>${stage[3][3]}</strong></div><div><span>${stage[3][4]}</span><strong>${stage[3][5]}</strong></div></div>`;
+    }));
+    document.querySelector("[data-copy]").addEventListener("click", async event => {
+      const text = document.getElementById("quickstartCode").innerText;
+      try { await navigator.clipboard.writeText(text); event.currentTarget.textContent = "Copied"; setTimeout(() => event.currentTarget.textContent = "Copy", 1400); }
+      catch { event.currentTarget.textContent = "Select text"; }
+    });
+  </script>
 </body>
 </html>
