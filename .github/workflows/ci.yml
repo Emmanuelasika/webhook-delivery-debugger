@@ -29,10 +29,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build container
-        run: docker build --tag webhooklab:ci .
+        run: docker build --tag webhook-delivery-debugger:ci .
       - name: Smoke-test container
         run: |
-          docker run --detach --name webhooklab-ci --publish 8080:8080 webhooklab:ci
+          docker run --detach --name webhook-delivery-debugger-ci --publish 8080:8080 webhook-delivery-debugger:ci
           for attempt in {1..15}; do
             curl --fail http://127.0.0.1:8080/health && exit 0
             sleep 1

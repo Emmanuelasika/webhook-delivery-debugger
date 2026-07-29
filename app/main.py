@@ -19,7 +19,7 @@ APP_DIR = Path(__file__).parent
 SECRET = os.getenv("WEBHOOKLAB_SIGNING_SECRET", "whlab_development_secret_change_me")
 DATABASE = Path(os.getenv("WEBHOOKLAB_DATABASE", str(APP_DIR.parent / "webhooklab.sqlite3")))
 store = DeliveryStore(DATABASE)
-app = FastAPI(title="WebhookLab", version="1.1.0")
+app = FastAPI(title="Webhook Delivery Debugger", version="1.1.0")
 
 
 class Event(BaseModel):

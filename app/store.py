@@ -1,4 +1,4 @@
-"""Transactional SQLite delivery ledger for WebhookLab.
+"""Transactional SQLite ledger for webhook delivery debugging.
 
 Payload bodies are intentionally not persisted. The ledger stores a SHA-256
 digest plus event metadata and one row per delivery attempt.
