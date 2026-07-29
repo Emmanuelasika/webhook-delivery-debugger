@@ -33,7 +33,7 @@ def send(event: dict[str, object], *, invalid_signature: bool = False, stale: bo
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="webhooklab", description="Exercise webhook delivery and replay behavior.")
-    parser.add_argument("--version", action="version", version="WebhookLab 1.1.0")
+    parser.add_argument("--version", action="version", version="Webhook Delivery Debugger 1.1.0")
     commands = parser.add_subparsers(dest="command", required=True)
     serve = commands.add_parser("serve"); serve.add_argument("--port", type=int, default=8080)
     for name in ("send", "chaos"):

@@ -1,1 +1,1 @@
-"""WebhookLab local reliability tooling."""
+"""Local webhook delivery debugging tools."""
