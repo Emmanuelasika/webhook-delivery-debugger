@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "${{ matrix.python-version }}"
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -e ".[dev]"
+      - run: python -m ruff check .
+      - run: python -m compileall -q app
+      - run: python -m pytest -q
+
+  container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build container
+        run: docker build --tag webhooklab:ci .
+      - name: Smoke-test container
+        run: |
+          docker run --detach --name webhooklab-ci --publish 8080:8080 webhooklab:ci
+          for attempt in {1..15}; do
+            curl --fail http://127.0.0.1:8080/health && exit 0
+            sleep 1
+          done
+          docker logs webhooklab-ci
+          exit 1

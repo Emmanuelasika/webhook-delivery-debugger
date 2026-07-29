@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="WebhookLab makes signature, replay, ordering, and delivery failures reproducible.">
+  <meta property="og:title" content="WebhookLab — Reliability before production">
+  <meta property="og:description" content="A local webhook delivery, replay, and observability lab.">
+  <title>WebhookLab — Reliability before production</title>
+  <link rel="stylesheet" href="site.css">
+</head>
+<body>
+  <div class="noise"></div>
+  <nav>
+    <a class="brand" href="#top"><span>W</span> WebhookLab</a>
+    <div class="nav-links"><a href="#failure-lab">Failure lab</a><a href="#architecture">Architecture</a><a href="#ledger">Ledger</a><a class="github" href="https://github.com/Emmanuelasika/WebhookLab">GitHub ↗</a></div>
+  </nav>
+
+  <main id="top">
+    <section class="hero">
+      <div class="signal"><i></i> Receiver healthy · signature verification enabled</div>
+      <h1>Break your webhooks<br><em>before production does.</em></h1>
+      <p>WebhookLab is a local reliability environment for signed fixtures, duplicate delivery, stale timestamps, out-of-order events, ID collisions, and delivery observability.</p>
+      <div class="actions"><a class="primary" href="#failure-lab">Explore failure modes</a><a href="https://github.com/Emmanuelasika/WebhookLab#quick-start">Run locally →</a></div>
+      <div class="delivery-visual">
+        <div class="endpoint source"><span>CLI</span><b>signed fixture</b><small>payment.succeeded</small></div>
+        <div class="packet"><span>HMAC-SHA256</span><i></i><i></i><i></i></div>
+        <div class="endpoint receiver"><span>API</span><b>receiver</b><small>202 accepted · 12ms</small></div>
+        <div class="pulse p1"></div><div class="pulse p2"></div>
+      </div>
+    </section>
+
+    <section class="metrics">
+      <div><span>Verification</span><strong>Constant-time</strong></div>
+      <div><span>Retention</span><strong>Digest only</strong></div>
+      <div><span>Claiming</span><strong>Transactional</strong></div>
+      <div><span>Coverage</span><strong>8 tests</strong></div>
+    </section>
+
+    <section id="failure-lab" class="section">
+      <div class="heading"><span>FAILURE LAB</span><h2>Reproduce the bugs integrations hide.</h2><p>Every mode produces an observable, testable outcome instead of an ambiguous “webhook failed” report.</p></div>
+      <div class="modes">
+        <article><div class="icon good">✓</div><h3>Valid delivery</h3><p>Sign and deliver a realistic provider-neutral event envelope.</p><code>webhooklab send payment.succeeded</code><span class="result ok">202 · processed</span></article>
+        <article><div class="icon warn">↻</div><h3>Duplicate replay</h3><p>Confirm repeated delivery is acknowledged without repeating business work.</p><code>--duplicate</code><span class="result duplicate">202 · duplicate</span></article>
+        <article><div class="icon bad">×</div><h3>Stale signature</h3><p>Prove timestamp tolerance rejects a correctly signed but expired request.</p><code>--stale</code><span class="result rejected">400 · rejected</span></article>
+        <article><div class="icon collision">!</div><h3>ID collision</h3><p>Detect a reused event ID carrying a different payload digest.</p><code>same id · changed body</code><span class="result rejected">409 · collision</span></article>
+        <article><div class="icon order">⇅</div><h3>Out-of-order events</h3><p>Send a later-created event first to exercise ordering assumptions.</p><code>--out-of-order</code><span class="result neutral">2 attempts</span></article>
+        <article><div class="icon inspect">⌕</div><h3>Delivery inspection</h3><p>Inspect aggregate outcomes or every attempt for one event ID.</p><code>webhooklab inspect [id]</code><span class="result neutral">digest only</span></article>
+      </div>
+    </section>
+
+    <section id="architecture" class="section dark-band">
+      <div class="heading"><span>ARCHITECTURE</span><h2>Verification before interpretation.</h2><p>The receiver rejects untrusted requests before event parsing and never stores payload bodies.</p></div>
+      <div class="architecture">
+        <div class="lane"><b>1</b><div><strong>Fixture CLI</strong><small>canonical JSON body</small></div></div><i>→</i>
+        <div class="lane key"><b>2</b><div><strong>HMAC gate</strong><small>timestamp + constant-time compare</small></div></div><i>→</i>
+        <div class="lane"><b>3</b><div><strong>Event claim</strong><small>BEGIN IMMEDIATE</small></div></div><i>→</i>
+        <div class="branch"><div class="lane"><b>4A</b><div><strong>Event digest</strong><small>unique identity</small></div></div><div class="lane"><b>4B</b><div><strong>Attempt ledger</strong><small>every delivery</small></div></div></div>
+      </div>
+      <div class="invariants"><div><b>01</b><h3>Atomic idempotency</h3><p>A concurrent replay cannot win a second event claim.</p></div><div><b>02</b><h3>Minimal retention</h3><p>Only event metadata and SHA-256 digests reach disk.</p></div><div><b>03</b><h3>Explicit collisions</h3><p>Changed bodies cannot masquerade as ordinary retries.</p></div></div>
+    </section>
+
+    <section id="ledger" class="section">
+      <div class="heading"><span>OPERATOR EXPERIENCE</span><h2>A ledger built for the investigation.</h2></div>
+      <div class="dashboard">
+        <div class="dash-top"><div><b>WebhookLab</b><span>delivery ledger</span></div><span class="live">● LIVE</span></div>
+        <div class="dash-metrics"><div><small>UNIQUE EVENTS</small><strong>184</strong><em>+12 today</em></div><div><small>DELIVERY ATTEMPTS</small><strong>201</strong><em>17 retries</em></div><div><small>DUPLICATE RATE</small><strong>8.5%</strong><em>within baseline</em></div></div>
+        <div class="table">
+          <div class="tr head"><span>EVENT ID</span><span>TYPE</span><span>OUTCOME</span><span>RECEIVED</span></div>
+          <div class="tr"><code>64ec…b713</code><span>payment.succeeded</span><b class="ok">processed</b><span>just now</span></div>
+          <div class="tr"><code>64ec…b713</code><span>payment.succeeded</span><b class="dupe">duplicate</b><span>2s ago</span></div>
+          <div class="tr"><code>f903…9d21</code><span>customer.updated</span><b class="ok">processed</b><span>14s ago</span></div>
+          <div class="tr"><code>cc12…0f8e</code><span>invoice.created</span><b class="fail">id_collision</b><span>32s ago</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section final"><span>OPEN SOURCE · MIT</span><h2>Know exactly how your integration fails.</h2><p>Clone it, run the receiver, and turn webhook behavior into evidence.</p><a class="primary" href="https://github.com/Emmanuelasika/WebhookLab">Explore the repository ↗</a></section>
+  </main>
+  <footer><span>WebhookLab · Local reliability tooling</span><a href="https://github.com/Emmanuelasika">Built by Emmanuel Asika</a></footer>
+</body>
+</html>
